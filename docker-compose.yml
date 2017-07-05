@@ -1,0 +1,56 @@
+version: "3"
+
+services:
+  composer:
+    image: composer:1.4.2
+    restart: 'no'
+    command: [/bin/bash, develop/build/composer/command.sh]
+    volumes:
+      - .:/var/www/app
+    working_dir: /var/www/app
+
+  php:
+    build:
+      context: .
+      dockerfile: ./develop/build/web/Dockerfile
+    image: faravel-web:7.1.4
+    restart: on-failure
+    depends_on:
+      - database
+    volumes:
+      - .:/var/www/app
+    working_dir: /var/www/app
+
+  nginx:
+    image: nginx:1.13.1
+    ports:
+      - "8080:80"
+      - "8081:81"
+    depends_on:
+      - php
+    volumes:
+      - ./develop/build/nginx:/etc/nginx/conf.d
+      - .:/var/www/app
+    working_dir: /var/www/app
+
+  database:
+    image: mysql:5.7
+    restart: on-failure
+    volumes:
+      - ./develop/data/mysql:/var/lib/mysql
+    expose:
+      - "3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: db_root
+      MYSQL_DATABASE: db_name
+      MYSQL_USER: db_usr
+      MYSQL_PASSWORD: db_pwd
+
+  phpmyadmin:
+    image: busybox:1.26.2
+    command: [/bin/sh, develop/build/phpmyadmin/command.sh]
+    volumes:
+      - .:/var/www/app
+    working_dir: /var/www/app
+
+
